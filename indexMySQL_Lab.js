@@ -63,9 +63,9 @@ app.post(apiversion + '/auth/register', (req, res) => {
 });
 
 app.post(apiversion + '/auth/signin', (req, res) => {
-
+  console.log("aaasss");
   db.query('SELECT * FROM users where username=?',req.body.username, function (error, results, fields) {
-
+    
     try
     {
       if (error) {
@@ -78,7 +78,7 @@ app.post(apiversion + '/auth/signin', (req, res) => {
         let hashedPassword=results[0].password
         let userId=results[0].userId
         const correct =bcrypt.compareSync(req.body.password, hashedPassword)
-
+        console.log(hashedPassword);
         if (correct)
         {
           let user={
@@ -214,7 +214,9 @@ app.post(apiversion + '/order',  verify, function  (req, res) {
     var address=req.body.address;
     var total =req.body.total;
     var details=req.body.details;
+ 
     //code for get mapDetails
+    var mapDetails=JSON.parse(details)
 
     res.setHeader('Content-Type', 'application/json');
     res.header("Access-Control-Allow-Origin", "*");
@@ -226,7 +228,22 @@ app.post(apiversion + '/order',  verify, function  (req, res) {
       VALUES ( ${userId},'${name}', '${address}', ${total});`,  function (error, results, fields) {
 
         if (error) throw error;
+        
+        db.query('SELECT orderId as orderId FROM orders ORDER BY orderId DESC LIMIT 1', function (error, results, fields){
+        if(error) throw error;
 
+        var orderId = Number(JSON.parse(JSON.stringify(results))[0]["orderId"]);
+
+        mapDetails.forEach(item => {
+                
+          db.query(`
+            INSERT INTO orderdetail (orderId, bookid, price, qty)  
+            VALUES(${orderId},${item.bookId}, ${item.price}, ${item.qty});`,
+            function (error, results, fields) {
+                if (error) throw error;
+            });
+        });
+      });
        //get last order id
        //insert order detail
 
